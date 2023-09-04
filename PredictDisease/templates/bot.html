@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chatbot</title>
+</head>
+<body>
+    <div id="chat-container">
+        <div id="chat"></div>
+        <input type="text" id="user-input" placeholder="Type your message..." />
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        // Define responses for the chatbot
+        const responses = {
+            "hi": "Hello. How can I assit you today",
+            "my cat is sick": "Oh sory to hear that. What are the symptoms!",           
+            "bye": "Goodbye! Have a great day!"
+        };
+        var symptoms ="no";
+        // Get references to HTML elements
+        const chatContainer = document.getElementById("chat");
+        const userInput = document.getElementById("user-input");
+
+        // Function to send a user message and get a response
+        function sendMessage() {
+            const userMessage = userInput.value;
+            if (userMessage.trim() === "") return; // Ignore empty messages
+
+            // Add user message to the chat container
+            chatContainer.innerHTML += `<div class="user-message">You: ${userMessage}</div>`;
+            var response = ""
+            // Check if the user message matches any known response
+            if(symptoms=="no")
+            {
+             response = responses[userMessage.toLowerCase()] || "I don't understand that.";
+            }
+            else{
+              fetch("http://127.0.0.1:8041/bot", {
+                method: "POST",
+                body: JSON.stringify({
+                  userId: 1,
+                  title: "Fix my bugs",
+                  completed: false
+                }),
+                headers: {
+                  "Content-type": "application/json; charset=UTF-8"
+                }
+              })
+                .then((response) => response.json())
+                .then((json) => console.log(json));
+            }
+            // Add chatbot response to the chat container
+            chatContainer.innerHTML += `<div class="chatbot-message">Chatbot: ${response}</div>`;
+
+            // Clear the user input field
+            userInput.value = "";
+            if(response =="Oh sory to hear that. What are the symptoms!")
+            {
+              symptoms ="yes";
+            }
+        }
+
+        // Listen for Enter key press to send a message
+        userInput.addEventListener("keyup", function(event) {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html> 
