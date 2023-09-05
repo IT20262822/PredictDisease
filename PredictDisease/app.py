@@ -1,24 +1,17 @@
+from flask_socketio import SocketIO
 from flask import Flask, render_template, request, redirect, url_for, session, make_response
 from flask_cors import cross_origin, CORS
 from flask_bcrypt import Bcrypt
 from pymongo import MongoClient
-from flask_socketio import SocketIO, join_room, leave_room
-from datetime import datetime
-import socketio
-from dbchat import save_message, get_messages
-from pickle import load
-from pandas import read_csv
 from numpy import array
-from csv import reader
 from json import dumps
-from google.cloud import dialogflow_v2
-from google.cloud.dialogflow_v2.types import TextInput, QueryInput
-from google.cloud.dialogflow_v2 import SessionsClient
-from google.api_core.exceptions import InvalidArgument
 from os import environ
 import pandas as pd
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.preprocessing import LabelEncoder
+from flask import Flask, request, jsonify
+from sklearn.preprocessing import MultiLabelBinarizer
+
+
 app = Flask(__name__)
 app.secret_key = '09cd6cb8206a12b54a7ddb28566be757'
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -27,23 +20,11 @@ bcrypt = Bcrypt(app)
 cluster = MongoClient(
         "mongodb://localhost:27017/")
 db = cluster['TrustyPet']
-test_data = read_csv('ml/Testing.csv', sep=',')
-test_data = test_data.drop('prognosis', axis=1)
-symptoms = list(test_data.columns)
-model = load(open('ml/new_logistic_regression_model.pkl', 'rb'))
 db = cluster['TrustyPet']
 
 fields = []
 description = {}
 
-with open('ml/disease_description.csv','r', encoding='utf-8') as csvfile:
-    csvreader = reader(csvfile)
-    fields = next(csvreader)
-
-    for row in csvreader:
-        disease, desc = row
-        description[disease] = desc
-        
 @app.route("/", methods=['GET'])
 def home():
     return render_template('index.html')
@@ -115,6 +96,7 @@ def login():
             return redirect(url_for("chat_bot"))
         else:
             return render_template('login.html')
+        
 @app.route('/dashboard')
 @cross_origin()
 def dashboard():
@@ -122,6 +104,7 @@ def dashboard():
         return render_template('dashboard.html')
     else:
         return redirect(url_for('login'))
+    
 @app.route('/logout')
 @cross_origin()
 def logout():
@@ -133,159 +116,28 @@ def logout():
     else:
         return redirect(url_for('home'))
 
-@app.route('/webhook', methods=['POST'])
-@cross_origin()
-def webhook():
-    req = request.get_json(silent=True, force=True)
-    res = ProcessRequest(req)
-    res = dumps(res, indent=4)
-    print(res)
-    response = make_response(res)
-    response.headers['Content-Type'] = 'application/json'
-    return response
-
-
-def ProcessRequest(req):
-    collection = db['user_symptoms']
-    result = req.get('queryResult')
-    intent = result.get('intent').get('displayName')
-
-    if intent == 'get_info':
-        name = result.get('parameters').get('any')
-        age = result.get('parameters').get('number')
-        collection.insert_one({
-            'name': name,
-            'age': age,
-            'symptoms': []
-        })
-
-        webhookresponse = 'Hey, what symptoms does your pet have? please enter one of the symptoms.(Ex. headache, vomiting etc.)'.format(
-            name)
-
-        return {
-            "fulfillmentMessages": [
-                {
-                    "text": {
-                        "text": [
-                            webhookresponse
-                        ]
-
-                    }
-                }
-            ]
-        }
-
-    elif intent == 'get_symptom':
-        name = result.get('outputContexts', [])[0].get('parameters').get('any')
-        symptom = result.get('parameters').get('symptom')
-
-        collection.find_one_and_update(
-            {'name': name},
-            {'$push': {'symptoms': symptom}}
-        )
-
-        webhookresponse = "Enter one more symptom beside {}. (Enter 'No' if not)".format(
-            symptom)
-
-        return {
-            "fulfillmentMessages": [
-                {
-                    "text": {
-                        "text": [
-                            webhookresponse
-                        ]
-                    }
-                }
-            ]
-        }
-    elif intent == 'get_symptom - no':
-        name = result.get('outputContexts', [])[1].get('parameters').get('any')
-        user_symptoms = collection.find_one({'name': name})
-        user_symptoms = list(user_symptoms.get('symptoms'))
-        y = []
-        for i in range(len(symptoms)):
-            y.append(0)
-        for i in range(len(user_symptoms)):
-            y[symptoms.index(user_symptoms[i])] = 1
-        disease = model.predict([array(y)])
-        disease = disease[0]
-
-        precaution_list = precautionDictionary[disease]
-
-        webhookresponse = f"""Hey your pet might have {disease}.
-
-        {description[disease]}
-        
-        """
-        users = db['users']
-        users.update_one({"name":name[1:]}, {"$set":{"disease":disease}})
-
-
-        return {
-            "fulfillmentMessages": [
-                {
-                    "text": {
-                        "text": [
-                            webhookresponse
-                        ]
-                    }
-                }
-            ]
-        }
-
-
 @app.route('/bot',methods=['POST'])
 @cross_origin()
 def bot():
-    # symptom ="Fever"
-    # data = {
-    #     'SymptomOne': ['Fever', 'Cough2', 'Fatigue', 'Fever', 'Cough1'],
-    #     # 'SymptomTwo': ['Cough3', 'Fever', 'Fatigue', 'Headache', 'Headache'],
-    #     'Disease': ['Flu', 'Flu', 'Common Cold', 'Flu', 'Common Cold']
-    # }
-
-    # df = pd.DataFrame(data)
-    # le = LabelEncoder()
-    # for col in df.columns:
-    #     df[col] = le.fit_transform(df[col])    
-    #     X_train = df.drop('Disease',axis=1)
-    #     y_train = df['Disease'].copy()
-    #     print(df.dtypes)
-    #     classifier = DecisionTreeClassifier()
-    #     classifier.fit(X_train, y_train)
-    # symptoms.append(le.transform([symptom])[0])
-    # prediction = classifier.predict([symptoms])
-    # print(f"Predicted Disease: {le.inverse_transform(prediction)[0]}")
-    
-    
-    # response = make_response(res)
-    # response.headers['Content-Type'] = 'application/json'
-    # return response
-    # age = user_data.get('age', 0)  # Replace with the actual JSON keys
-    # symptoms = user_data.get('symptoms', '')
-    # Convert symptoms to a numerical representation (dummy encoding)
-    # Replace this with a proper encoding method in a real application
-    from flask import Flask, request, jsonify
-    from sklearn.tree import DecisionTreeClassifier
-    from sklearn.preprocessing import MultiLabelBinarizer
-    import pandas as pd
-
-
-
-    # Load your dataset
+   
+    # Load the dataset
     data = pd.read_csv('medical_data.csv')
-    symptom_features =  data['Symptoms'].tolist()
+    symptom_features = list(set(data[['Symptom1', 'Symptom2', 'Symptom3', 'Symptom4']].values.ravel()))
 
     # Convert the Symptoms column to a list of lists for one-hot encoding
-    data['Symptoms'] = data['Symptoms'].apply(lambda x: x.split(','))
-    symptoms = data['Symptoms'].tolist()
-
+    data[['Symptom1', 'Symptom2', 'Symptom3', 'Symptom4']] = data[['Symptom1', 'Symptom2', 'Symptom3', 'Symptom4']].apply(lambda x: x.str.split(','))
+   
+   # Flatten the symptom lists
+    data[['Symptom1', 'Symptom2', 'Symptom3', 'Symptom4']] = data[['Symptom1', 'Symptom2', 'Symptom3', 'Symptom4']].apply(lambda x: [item for sublist in x for item in sublist])
+    
+    symptoms = data[['Symptom1', 'Symptom2', 'Symptom3', 'Symptom4']].values.tolist()
+   
     # Initialize a MultiLabelBinarizer for one-hot encoding
     mlb = MultiLabelBinarizer(classes=symptom_features)
     mlb.fit(symptoms)
     symptoms_encoded = mlb.transform(symptoms)
 
-    # Combine age and one-hot encoded symptoms
+    # One-hot encoded symptoms
     X = pd.DataFrame(symptoms_encoded, columns=mlb.classes_)
     y = data['Disease']
 
@@ -294,17 +146,22 @@ def bot():
     classifier.fit(X, y)
 
 
-    user_data = request.json  # Assuming you receive user data as JSON
-    age = user_data.get('age', 0)
-    symptoms_input = user_data.get('symptoms', [])
+    user_data = request.json  
+    # symptoms_input = user_data.get('symptoms', [])
+    symptoms_input = user_data.get('symptoms', "").split(',')
     print(user_data)
-        # Encode the user's symptoms using the same MultiLabelBinarizer
+    
+    # Ensure that there are four symptoms, and if not, handle accordingly
+    if len(symptoms_input) != 4:
+        return jsonify({'error': 'Please provide four symptoms separated by commas.'}), 400
+    
+    # Encoding the user's symptoms using the same MultiLabelBinarizer
     user_symptoms_encoded = mlb.transform([symptoms_input])
 
-        # Combine age and one-hot encoded symptoms for prediction
+    # One-hot encoded symptoms for prediction
     user_input = pd.DataFrame([list(user_symptoms_encoded[0])])
 
-        # Predict the disease using the trained model
+    # Predicting the disease using the trained model
     predicted_disease = classifier.predict(user_input)
     print(predicted_disease)
     return jsonify({'predicted_disease': predicted_disease[0]})

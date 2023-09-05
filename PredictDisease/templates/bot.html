@@ -101,18 +101,18 @@
       Lorem ipsum
     </div>
     <script>
-      // Define responses for the chatbot
+      // Responses for the chatbot
       const responses = {
-          "hi": "Hello. How can I assit you today?",
-          "my cat is sick": "Oh sory to hear that! What are the symptoms?",           
-          "bye": "Goodbye! Have a great day!"
+          "hi": "Hello. How can I assist you today?",
+          "my cat is sick": "Oh sorry to hear that! What are the symptoms?",           
+          "thank you":"Thank you for using AI Vet. Hope your cat gets better soon."
       };
       var symptoms ="no";
       // Get references to HTML elements
       const mymsg = document.getElementById("chat-container");
       const userInput = document.getElementById("user-input");
 
-      // Function to send a user message and get a response
+      // send a user message and get a response
       async function sendMessage() {
           const userMessage = userInput.value;
           if (userMessage.trim() === "") return; // Ignore empty messages
@@ -127,15 +127,15 @@
           }
           else{
             chatresponse = await getDisease(userMessage);
-            chatresponse = "Your cat might be having "+chatresponse+" please consult a Vetaranian";
-            symptoms = "no";
+            chatresponse = "Your cat might be having <b>"+chatresponse+"</b> Please consult a Vetaranian.";
+            symptoms = "no"
             }
           // Add chatbot response to the chat container
-          mymsg.innerHTML += `<div class="chatbot-message">Chatbot: ${chatresponse}</div>`;
+          mymsg.innerHTML += `<div class="chatbot-message">AI Vet: ${chatresponse}</div>`;
 
           // Clear the user input field
           userInput.value = "";
-          if(chatresponse =="Oh sory to hear that! What are the symptoms?")
+          if(chatresponse =="Oh sorry to hear that! What are the symptoms?")
           {
             symptoms ="yes";
           }

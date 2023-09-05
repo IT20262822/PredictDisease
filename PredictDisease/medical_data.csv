@@ -1,4 +1,18 @@
-Symptoms,Disease
-Fever,Cold
-Cough,Flu
-Stomache,Diarrea
+Symptom1,Symptom2,Symptom3,Symptom4,Disease
+lumps,bad breath,listlessness,lethergy,Squamous cell carcinoma.
+weight loss,diarrhea,vomitting,loss of appetite,Lymphosarcoma.
+loss of appetite,drinking lot of water,increased urination,dehydration,Diabetes.
+enlarged lymph nodes,fever,anemia,disheveled coat,Feline Immunodeficiency Virus.
+inflamed gums,abscesses,seizures,upper respitory infections,Feline Leukemia Virus.
+cough,asthma,depression,lethergy,Heartworm.
+weakness,disorientation,paralysis,seizures,Rabies.
+circular areas of hair loss,broken and stubbly hair,dandruff,inflamed areas of skin,Ringworm.
+sneezing,congestion,drooling,gagging,Upper Respiratory Infections.
+bloody stool,worms in stool,bloating,constipation,Worms.
+diarrhea,vomitting,drinking a lot of water,disheveled coat,kidney disease.
+redness,swelling,discomfort,bleeeding gums,Gingivitis.
+discomfort,bleeeding gums,inablity to eat,halitosis,Periodontitis.
+fever,drooling,inablity to eat,pain,Tooth Resorption.
+diabetes,joint problems,cancer ,heart disease,obesity.
+diarrhea,vomitting,loss of appetite,abdominal pain,Pancreatitis.
+vomiting,diarrhea,hyperactivity,restlessness,Hyperthyroidism.
