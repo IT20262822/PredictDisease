@@ -265,52 +265,52 @@ def bot():
     # symptoms = user_data.get('symptoms', '')
     # Convert symptoms to a numerical representation (dummy encoding)
     # Replace this with a proper encoding method in a real application
-    from sklearn.model_selection import train_test_split
-    from sklearn.tree import DecisionTreeClassifier
     from flask import Flask, request, jsonify
+    from sklearn.tree import DecisionTreeClassifier
     from sklearn.preprocessing import MultiLabelBinarizer
-    
+    import pandas as pd
+
+
+
+    # Load your dataset
     data = pd.read_csv('medical_data.csv')
-    symptoms = [symptom.split(',') for symptom in data['Symptoms']]
+    symptom_features =  data['Symptoms'].tolist()
 
-    symptom_features = ['Cough', 'Fever', 'Headache']
-    
+    # Convert the Symptoms column to a list of lists for one-hot encoding
     data['Symptoms'] = data['Symptoms'].apply(lambda x: x.split(','))
-
-# Convert the Symptoms column to a list of lists for one-hot encoding
     symptoms = data['Symptoms'].tolist()
-    
+
     # Initialize a MultiLabelBinarizer for one-hot encoding
     mlb = MultiLabelBinarizer(classes=symptom_features)
-     
-    
     mlb.fit(symptoms)
     symptoms_encoded = mlb.transform(symptoms)
 
     # Combine age and one-hot encoded symptoms
-    X = pd.concat([data['Age'], pd.DataFrame(symptoms_encoded, columns=mlb.classes_)], axis=1)
+    X = pd.DataFrame(symptoms_encoded, columns=mlb.classes_)
     y = data['Disease']
 
-    # Split the dataset into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    # Create a simple decision tree classifier (replace with a more complex model)
+    # Create a decision tree classifier
     classifier = DecisionTreeClassifier()
-    classifier.fit(X_train, y_train)
-    user_data  = {"age": 30, "symptoms": "Fever"}
+    classifier.fit(X, y)
+
+
+    user_data = request.json  # Assuming you receive user data as JSON
     age = user_data.get('age', 0)
-    symptoms = user_data.get('symptoms', [])
-    user_symptoms_encoded = mlb.transform([symptoms])
+    symptoms_input = user_data.get('symptoms', [])
+    print(user_data)
+        # Encode the user's symptoms using the same MultiLabelBinarizer
+    user_symptoms_encoded = mlb.transform([symptoms_input])
 
-   
-    # Combine age and one-hot encoded symptoms for prediction
-    user_input = pd.DataFrame([[age] + list(user_symptoms_encoded[0])], columns=['Age'] + symptom_features)
-    
-    # Predict the disease using the trained model
-    predicted_disease = classifier.predict(user_input)[0]
+        # Combine age and one-hot encoded symptoms for prediction
+    user_input = pd.DataFrame([list(user_symptoms_encoded[0])])
 
-
-    print(jsonify({'predicted_disease': predicted_disease}))
+        # Predict the disease using the trained model
+    predicted_disease = classifier.predict(user_input)
+    print(predicted_disease)
+    return jsonify({'predicted_disease': predicted_disease[0]})
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True)
+    app.run(debug=True)
+
+
+

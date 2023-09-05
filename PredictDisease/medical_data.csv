@@ -1,4 +1,4 @@
-Age,Symptoms,Disease
-30,Fever,Cold
-45,Cough,Flu
-22,Headache,Fever
+Symptoms,Disease
+Fever,Cold
+Cough,Flu
+Stomache,Diarrea

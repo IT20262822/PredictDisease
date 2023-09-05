@@ -1,6 +1,6 @@
 {% extends 'base_dashboard.html' %}
 {% block head %}
-<title> Dashboard | AI Doctor </title>
+<title> Dashboard | TrustyPet </title>
 {% endblock %}
 {% block content %}
 <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
@@ -9,10 +9,10 @@
   </div>
   <div class="row">
     <div class="card mx-3 my-3 col-3" style="width: 18rem;">
-      <img src="{{ url_for('static', filename='img/card2.png') }}" class="card-img-top" alt="AI Doctor">
+      
       <div class="card-body">
-        <h5 class="card-title">AI Doctor</h5>
-        <p class="card-text">Predict your disease with the help of an AI Doctor</p>
+        <h5 class="card-title">AI Vet</h5>
+        <p class="card-text">Predict your pet's disease with the help of an AI Vetaranian</p>
         <a href="{{ url_for('chat_bot') }}" class="btn btn-primary">Click Here</a>
       </div>
     </div>
